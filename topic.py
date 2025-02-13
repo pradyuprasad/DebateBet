@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 
+
 class TopicCategory(Enum):
     GLOBAL_GOVERNANCE_AND_ECONOMICS = "global_governance_and_economics"
     SOCIAL_JUSTICE_AND_IDENTITY = "social_justice_and_identity"
@@ -12,4 +13,3 @@ class TopicCategory(Enum):
 class DebateTopic(BaseModel):
     topic_description: str
     category: TopicCategory
-
