@@ -1,0 +1,189 @@
+first_speech: |
+ You are giving the opposition speech. Structure your response as follows:
+ <speech>
+     <argument1>
+         <coreClaim>State your first main claim in one sentence</coreClaim>
+         <supportType>evidence|principle</supportType>
+         <supportDetails>
+             If evidence: Provide specific examples/data
+             If principle: Explain the principle and its validity
+         </supportDetails>
+         <connection>
+             Explain how this support proves your claim
+         </connection>
+     </argument1>
+     <argument2>
+         [Same structure as argument1]
+     </argument2>
+     <argument3>
+         [Optional third argument, same structure]
+     </argument3>
+     <synthesis>
+         Explain how these arguments work together
+         Show why they prove your side of the motion
+         Present the overall case impact
+     </synthesis>
+ </speech>
+
+rebuttal_speech: |
+ Below is your opponent's first speech. Generate a rebuttal structured as follows:
+ <rebuttal>
+     <clashPoint1>
+         <originalClaim>[Quote exact core claim you're responding to]</originalClaim>
+         <challengeType>evidence_critique|principle_critique|counter_evidence|counter_principle</challengeType>
+         <challenge>
+             If evidence_critique: Show why their evidence is flawed/insufficient
+             If principle_critique: Show why their principle is flawed/limited
+             If counter_evidence: Present stronger opposing evidence
+             If counter_principle: Present superior competing principle
+         </challenge>
+         <impact>Explain why winning this point matters for the debate</impact>
+     </clashPoint1>
+     <clashPoint2>
+         [Same structure as clashPoint1 for second argument]
+     </clashPoint2>
+     <clashPoint3>
+         [If needed for third argument]
+     </clashPoint3>
+     <preemptiveDefense>
+         - Identify potential vulnerabilities in your responses
+         - Provide additional support for key challenges
+         - Explain why your responses should prevail
+     </preemptiveDefense>
+     <weighing>
+         - Identify which clash points matter most
+         - Explain why your side wins the key points
+         - Show how this affects the overall debate
+     </weighing>
+ </rebuttal>
+
+ REQUIREMENTS:
+ - Directly engage with opponent's core claims
+ - Match evidence vs evidence, principle vs principle where possible
+ - Show clear comparative analysis
+ - Be specific about why your responses are stronger
+
+final_speech: |
+ I will provide your opponent's rebuttal analysis. Give a final speech that shows why you win this debate.
+ <finalSpeech>
+     <framing>
+         What are the core questions this debate comes down to?
+     </framing>
+     <keyClashes>
+         For each major clash identified:
+         - Quote the exact disagreement
+         - Explain why your side wins this clash by showing:
+             * Why your evidence/principles are stronger
+             * Where their response falls short
+             * What makes this clash crucial
+     </keyClashes>
+     <voting>
+         Explain why you win the debate by showing:
+         - Which clashes matter most and why
+         - How winning these key points proves your case
+         - Why these issues outweigh any points you might have lost
+     </voting>
+ </finalSpeech>
+
+ REQUIREMENTS:
+ - Focus on the main clashes that emerged
+ - Make direct comparisons
+ - Show clear impact to winning the debate
+ - No new arguments
+
+judging_prompt: |
+    You are an expert debate judge. Your role is to analyze formal debates using the following criteria:
+
+    Key Clash Analysis:
+    - Identify the major points of disagreement between teams
+    - Track exact quotes that represent each side's positions
+    - Analyze how arguments evolved through the debate
+    - Compare the strength of competing claims and responses
+    - Evaluate the quality of evidence and reasoning for each clash
+
+    Judging Standards:
+    - Assess logical consistency and validity of arguments
+    - Evaluate the quality and relevance of evidence
+    - Consider both explicit and implicit assumptions
+    - Weigh the relative importance of different arguments
+    - Look for clear links between claims and impacts
+
+    Evaluation Requirements:
+    - Consider both sides' strongest possible case (steelman)
+    - Base decisions only on arguments made in the debate
+    - Ignore presentation style/speaking quality
+    - Focus on substantive reasoning and evidence
+    - Maintain neutrality between competing frameworks when valid
+
+    Decision Making:
+    - Winner must be either "proposition" or "opposition" (no ties)
+    - Confidence level must reflect the margin of victory (0-100)
+    - Identify specific key factors that determined the outcome
+    - Provide clear logical reasoning for your conclusion
+    - Explain how different arguments interacted to produce the result
+
+
+    format:
+    <debateJudging>
+        <clashAnalysis>
+            <clash>
+                <exactQuotes>
+                    Record direct quotes from each team that capture their position
+                </exactQuotes>
+                <coreDispute>
+                    Explain the fundamental point of disagreement
+                </coreDispute>
+                <argumentEvolution>
+                    Track how this clash developed through the debate rounds
+                </argumentEvolution>
+                <comparison>
+                    Evaluate relative strength of competing claims and responses
+                    Assess quality of evidence presented by each side
+                </comparison>
+            </clash>
+        </clashAnalysis>
+
+        <judgingProcess>
+            <standards>
+                How well did arguments maintain logical consistency?
+                Was evidence relevant and well-applied?
+                Were impacts clearly linked to claims?
+            </standards>
+            <assumptions>
+                What unstated premises underlie each position?
+                Which frameworks are teams relying on?
+            </assumptions>
+        </judgingProcess>
+
+        <steelmanAnalysis>
+            <propCase>
+                Strongest possible version of proposition arguments
+                Best interpretation of their evidence
+                Most charitable reading of their framework
+            </propCase>
+            <oppCase>
+                Strongest possible version of opposition arguments
+                Best interpretation of their evidence
+                Most charitable reading of their framework
+            </oppCase>
+        </steelmanAnalysis>
+
+        <decision>
+            <winnerName>opposition|proposition</winnerName>
+            <confidence>0-100</confidence>
+            <keyFactors>
+                Which specific arguments/clashes determined the outcome
+                Why these particular points proved decisive
+                How different arguments interacted
+            </keyFactors>
+            <reasoning>
+                Clear explanation of how you reached your conclusion
+                Why this side's case ultimately proved stronger
+                How you weighed competing arguments
+            </reasoning>
+        </decision>
+    </debateJudging>
+
+
+
+

@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 from dataclasses import dataclass
 from config import Config
 
+
 @dataclass
 class DebateConfig:
     system_prompt_words: int = 300
@@ -14,13 +15,14 @@ class DebateConfig:
     judge_output_words: int = 2000
     num_trials: int = 2
 
+
 def count_debate_tokens(config: DebateConfig) -> Tuple[float, float]:
     input_history = config.system_prompt_words
 
     stages = [
         (config.first_speech_words, config.scratchpad_words),
         (config.rebuttal_words, config.scratchpad_words),
-        (config.final_speech_words, config.scratchpad_words)
+        (config.final_speech_words, config.scratchpad_words),
     ]
 
     total_input = 0
@@ -32,43 +34,58 @@ def count_debate_tokens(config: DebateConfig) -> Tuple[float, float]:
         total_output += stage_output
         input_history += stage_output + speech_words
 
-    return (total_input * config.words_to_tokens_multiplier,
-            total_output * config.words_to_tokens_multiplier)
+    return (
+        total_input * config.words_to_tokens_multiplier,
+        total_output * config.words_to_tokens_multiplier,
+    )
 
-def calculate_cost(input_tokens: float, output_tokens: float,
-                  input_price: float, output_price: float) -> float:
+
+def calculate_cost(
+    input_tokens: float, output_tokens: float, input_price: float, output_price: float
+) -> float:
     return (input_tokens * input_price + output_tokens * output_price) / 10**6
 
-def load_model_pricing(config: Config) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
-    with open(config.api_pricing_path, 'r') as f:
+
+def load_model_pricing(
+    config: Config,
+) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
+    with open(config.api_pricing_path, "r") as f:
         debater_pricing = json.load(f)
-    with open(config.judge_pricing_path, 'r') as f:
+    with open(config.judge_pricing_path, "r") as f:
         judge_pricing = json.load(f)
     return debater_pricing, judge_pricing
+
 
 def calculate_experiment_count(num_models: int) -> int:
     debates_per_model = (num_models - 1) * 2  # Each model debates others twice
     return num_models * debates_per_model
 
+
 def estimate_judging_cost(config: Config, debate_config: DebateConfig) -> float:
     _, single_debate_output = count_debate_tokens(debate_config)
     judge_input_tokens = single_debate_output * 2
-    judge_output_tokens = debate_config.judge_output_words * debate_config.words_to_tokens_multiplier
+    judge_output_tokens = (
+        debate_config.judge_output_words * debate_config.words_to_tokens_multiplier
+    )
 
     _, judge_pricing = load_model_pricing(config)
 
     # Calculate cost per judge
     judge_costs = {
-        model: calculate_cost(judge_input_tokens, judge_output_tokens,
-                            prices[0], prices[1])
+        model: calculate_cost(
+            judge_input_tokens, judge_output_tokens, prices[0], prices[1]
+        )
         for model, prices in judge_pricing.items()
     }
 
     total_judge_cost = sum(judge_costs.values())
     debater_pricing, _ = load_model_pricing(config)
-    total_experiments = calculate_experiment_count(len(debater_pricing)) * debate_config.num_trials
+    total_experiments = (
+        calculate_experiment_count(len(debater_pricing)) * debate_config.num_trials
+    )
 
     return total_judge_cost * total_experiments
+
 
 def estimate_debater_cost(config: Config, debate_config: DebateConfig) -> float:
     input_tokens, output_tokens = count_debate_tokens(debate_config)
@@ -76,18 +93,22 @@ def estimate_debater_cost(config: Config, debate_config: DebateConfig) -> float:
 
     # Calculate cost per debater
     debater_costs = {
-        model: calculate_cost(input_tokens, output_tokens,
-                            prices[0], prices[1])
+        model: calculate_cost(input_tokens, output_tokens, prices[0], prices[1])
         for model, prices in debater_pricing.items()
     }
 
     num_models = len(debater_pricing)
     experiments_per_model = (num_models - 1) * 2
-    total_cost = sum(debater_costs.values()) * experiments_per_model * debate_config.num_trials
+    total_cost = (
+        sum(debater_costs.values()) * experiments_per_model * debate_config.num_trials
+    )
 
     return total_cost
 
-def print_detailed_experiment_report(config: Config, debate_config: DebateConfig) -> None:
+
+def print_detailed_experiment_report(
+    config: Config, debate_config: DebateConfig
+) -> None:
     debater_pricing, judge_pricing = load_model_pricing(config)
 
     # Calculate basic stats
@@ -119,7 +140,9 @@ def print_detailed_experiment_report(config: Config, debate_config: DebateConfig
     input_tokens, output_tokens = count_debate_tokens(debate_config)
     print(f"Debater input tokens: {input_tokens:,.0f}")
     print(f"Debater output tokens: {output_tokens:,.0f}")
-    print(f"Judge output tokens: {debate_config.judge_output_words * debate_config.words_to_tokens_multiplier:,.0f}")
+    print(
+        f"Judge output tokens: {debate_config.judge_output_words * debate_config.words_to_tokens_multiplier:,.0f}"
+    )
 
     # Calculate and show costs
     debater_cost = estimate_debater_cost(config, debate_config)
@@ -130,7 +153,7 @@ def print_detailed_experiment_report(config: Config, debate_config: DebateConfig
     print(f"Total debater cost: ${debater_cost:,.2f}")
     print(f"Total judging cost: ${judge_cost:,.2f}")
     print(f"Total experiment cost: ${total_cost:,.2f}")
-    print(f"Cost per debate: ${total_cost/total_debates:,.2f}")
+    print(f"Cost per debate: ${total_cost / total_debates:,.2f}")
 
 
 if __name__ == "__main__":
