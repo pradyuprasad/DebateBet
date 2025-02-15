@@ -5,13 +5,13 @@ from config import Config
 
 @dataclass
 class DebateConfig:
-    system_prompt_words: int = 600
+    system_prompt_words: int = 300
     first_speech_words: int = 500
     rebuttal_words: int = 400
     scratchpad_words: int = 300
     final_speech_words: int = 500
     words_to_tokens_multiplier: float = 1.35
-    judge_output_words: int = 300
+    judge_output_words: int = 2000
     num_trials: int = 2
 
 def count_debate_tokens(config: DebateConfig) -> Tuple[float, float]:
@@ -19,7 +19,6 @@ def count_debate_tokens(config: DebateConfig) -> Tuple[float, float]:
 
     stages = [
         (config.first_speech_words, config.scratchpad_words),
-        (config.rebuttal_words, config.scratchpad_words),
         (config.rebuttal_words, config.scratchpad_words),
         (config.final_speech_words, config.scratchpad_words)
     ]
