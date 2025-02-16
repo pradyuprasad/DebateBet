@@ -6,7 +6,7 @@ import requests
 from models import (
     DebateTotal,
     DebatorOutputs,
-    DebatorPrompts,
+    DebatePrompts,
     DebateTopic,
     JudgeResult,
     Round,
@@ -14,7 +14,6 @@ from models import (
     SpeechType,
 )
 from utils import make_rounds
-from openai import OpenAI
 from typing import List, Dict
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -61,7 +60,6 @@ class DebateState:
                         "content": opp_speech,
                     }
                 )
-        print("state for next speech is", messages)
         return messages
 
 
@@ -107,7 +105,7 @@ def extract_debate_result(xml_string: str, model: str) -> JudgeResult:
                    print("Confidence must be a number")
                    continue
 
-               confidence = int(confidence)
+               confidence_int = int(confidence_str)
                if not 0 <= confidence <= 100:
                    print("Confidence must be between 0 and 100")
                    continue
@@ -115,13 +113,20 @@ def extract_debate_result(xml_string: str, model: str) -> JudgeResult:
                return JudgeResult(
                    model=model,
                    winner=winner,
-                   confidence=confidence,
+                   confidence=confidence_int,
                    logic=xml_string
                )
            except ValueError:
                print("Invalid input, please try again")
 
-def get_judgement_string(debate: DebateTotal, prompts: DebatorPrompts, model: str) -> str:
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    before_sleep=lambda retry_state: logger.warning(
+        f"Attempt {retry_state.attempt_number} failed. Retrying after backoff..."
+    ),
+)
+def get_judgement_string(debate: DebateTotal, prompts: DebatePrompts, model: str) -> tuple[str, dict]:
     logger.info(f"Starting judge request to OpenRouter for model: {model}")
 
     headers = {
@@ -162,22 +167,46 @@ def get_judgement_string(debate: DebateTotal, prompts: DebatorPrompts, model: st
         raise ValueError(error_msg)
 
     judgment = response_json["choices"][0]["message"]["content"]
+    usage = response_json.get("usage", {})
+
     logger.info("Successfully retrieved judgment")
     logger.debug(f"Judgment content: {judgment}")
 
-    return judgment
+    return judgment, usage
 
+def get_judgement(debate: DebateTotal, prompts: DebatePrompts, judge_model: str) -> None:
+    try:
+        judgment_string, usage = get_judgement_string(debate=debate, prompts=prompts, model=judge_model)
 
-def get_judgement(debate: DebateTotal, prompts: DebatorPrompts, judge_model:str) -> JudgeResult:
-    judgement_string = get_judgement_string(debate=debate, prompts=prompts, model=judge_model)
-    return extract_debate_result(xml_string=judgement_string, model=judge_model)
+        # Track successful token usage
+        debate.judge_token_counts.add_successful_call(
+            model=judge_model,
+            completion_tokens=usage.get("completion_tokens", 0),
+            prompt_tokens=usage.get("prompt_tokens", 0),
+            total_tokens=usage.get("total_tokens", 0)
+        )
+
+        judge_result = extract_debate_result(xml_string=judgment_string, model=judge_model)
+        debate.judge_results.append(judge_result)
+
+    except Exception as e:
+        # Track failed token usage if available in the error
+        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+            usage = e.response.json().get('usage', {})
+            debate.judge_token_counts.add_failed_call(
+                model=judge_model,
+                completion_tokens=usage.get("completion_tokens", 0),
+                prompt_tokens=usage.get("prompt_tokens", 0),
+                total_tokens=usage.get("total_tokens", 0)
+            )
+        raise
+
 
 def run_debate(
     proposition_model: str,
     opposition_model: str,
     motion: DebateTopic,
-    prompts: DebatorPrompts,
-    client: OpenAI,
+    prompts: DebatePrompts,
     path: Path,
     judge_models: List[str]
 ) -> DebateTotal:
@@ -200,14 +229,17 @@ def run_debate(
     )
     def get_valid_response(messages, model):
         logger.info(f"Starting API request to OpenRouter for model: {model}")
-        logger.debug(f"Request messages: {messages}")
+        logger.info(f"Request messages: {messages}")
         headers = {
         "Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}",
         "Content-Type": "application/json",
         }
         payload = {
         "model": model,  # OpenRouter requires full model path like "openai/gpt-4"
-        "messages": messages
+        "messages": messages,
+        "provider": {
+            "ignore": ["Nebius"]
+        }
         }
         logger.debug(f"Request payload: {payload}")
 
@@ -254,7 +286,7 @@ def run_debate(
             logger.info(f"Speech content: {speech}")
 
             # Track successful token usage
-            output.token_counts.add_successful_call(
+            output.debator_token_counts.add_successful_call(
                 model=model,
                 completion_tokens=completion_tokens,
                 prompt_tokens=prompt_tokens,
@@ -270,7 +302,7 @@ def run_debate(
             # Track failed token usage
             logger.error(f"Error processing API response: {str(e)}")
 
-            output.token_counts.add_failed_call(
+            output.debator_token_counts.add_failed_call(
                 model=model,
                 completion_tokens=completion_tokens,
                 prompt_tokens=prompt_tokens,
@@ -296,8 +328,12 @@ def run_debate(
         messages = [
             {
                 "role": "system",
-                "content": f"You are debating {motion.topic_description}. You are on the {round.side.value} side. {prompt}",
+                "content": f"You are on the {round.side.value} side. {prompt}",
+            }, {
+                "role": "user",
+                "content": f"You are debating {motion.topic_description}. "
             },
+
             *context,
         ]
 
@@ -322,7 +358,7 @@ def run_debate(
 
     output.judge_results =  []
     for model in judge_models:
-        output.judge_results.append(get_judgement(debate=output, prompts=prompts, judge_model=model))
+        get_judgement(debate=output, prompts=prompts, judge_model=model)
 
         output.save_to_json()
 

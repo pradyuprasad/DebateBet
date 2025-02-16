@@ -35,7 +35,7 @@ class Round:
         self.speech_type = speech_type
 
 
-class DebatorPrompts(BaseModel):
+class DebatePrompts(BaseModel):
     first_speech_prompt: str
     rebuttal_speech_prompt: str
     final_speech_prompt: str
@@ -119,7 +119,7 @@ class DebateTotal(BaseModel):
     path_to_store: Path
     proposition_model: str
     opposition_model: str
-    prompts: DebatorPrompts
+    prompts: DebatePrompts
     proposition_output: DebatorOutputs = Field(
         default_factory=lambda: DebatorOutputs(side=Side.PROPOSITION)
     )
@@ -128,7 +128,8 @@ class DebateTotal(BaseModel):
     )
     judge_models: List[str] = Field(default_factory=list)
     judge_results: List[JudgeResult] = Field(default_factory=list)
-    token_counts: TokenCount = Field(default_factory=TokenCount)
+    debator_token_counts: TokenCount = Field(default_factory=TokenCount)
+    judge_token_counts: TokenCount = Field(default_factory=TokenCount)
 
     def to_dict(self) -> dict:
         return {
@@ -150,10 +151,15 @@ class DebateTotal(BaseModel):
             },
             "judge_models": self.judge_models,
             "judge_results": [result.dict() for result in self.judge_results],
-            "token_counts": {
+            "debator_token_counts": {
                 model: usage.dict()
-                for model, usage in self.token_counts.model_usages.items()
+                for model, usage in self.debator_token_counts.model_usages.items()
+            },
+            "judge_token_counts" : {
+                model: usage.model_dump()
+                for model, usage in self.judge_token_counts.model_usages.items()
             }
+
         }
 
     def save_to_json(self) -> None:
@@ -173,7 +179,7 @@ class DebateTotal(BaseModel):
             category=TopicCategory(data['motion']['category'])
         )
 
-        data['prompts'] = DebatorPrompts(**data['prompts'])
+        data['prompts'] = DebatePrompts(**data['prompts'])
 
         data['proposition_output'] = DebatorOutputs(
             side=Side(data['proposition_output']['side']),
@@ -187,11 +193,19 @@ class DebateTotal(BaseModel):
 
         data['judge_results'] = [JudgeResult(**result) for result in data['judge_results']]
 
-        token_counts = TokenCount()
-        for model, usage_data in data.get('token_counts', {}).items():
+        debator_token_counts = TokenCount()
+        for model, usage_data in data.get('debator_token_counts', {}).items():
             model_usage = ModelTokenUsage(**usage_data)
-            token_counts.model_usages[model] = model_usage
-        data['token_counts'] = token_counts
+            debator_token_counts.model_usages[model] = model_usage
+
+
+        judge_token_counts = TokenCount()
+        for model, usage_data in data.get('judge_token_counts'):
+            model_usage = ModelTokenUsage(**usage_data)
+            judge_token_counts.model_usages[model] = model_usage
+
+        data['debator_token_counts'] = debator_token_counts
+        data['judge_token_counts'] = judge_token_counts
 
         data['path_to_store'] = Path(data['path_to_store'])
 

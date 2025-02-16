@@ -1,29 +1,29 @@
 first_speech: |
- You are giving the opposition speech. Structure your response as follows:
- <speech>
-     <argument1>
-         <coreClaim>State your first main claim in one sentence</coreClaim>
-         <supportType>evidence|principle</supportType>
-         <supportDetails>
-             If evidence: Provide specific examples/data
-             If principle: Explain the principle and its validity
-         </supportDetails>
-         <connection>
-             Explain how this support proves your claim
-         </connection>
-     </argument1>
-     <argument2>
-         [Same structure as argument1]
-     </argument2>
-     <argument3>
-         [Optional third argument, same structure]
-     </argument3>
-     <synthesis>
-         Explain how these arguments work together
-         Show why they prove your side of the motion
-         Present the overall case impact
-     </synthesis>
- </speech>
+    Structure your response as follows:
+    <speech>
+        <argument1>
+            <coreClaim>State your first main claim in one sentence</coreClaim>
+            <supportType>evidence|principle</supportType>
+            <supportDetails>
+                If evidence: Provide specific examples/data
+                If principle: Explain the principle and its validity
+            </supportDetails>
+            <connection>
+                Explain how this support proves your claim
+            </connection>
+        </argument1>
+        <argument2>
+            [Same structure as argument1]
+        </argument2>
+        <argument3>
+            [Optional third argument, same structure]
+        </argument3>
+        <synthesis>
+            Explain how these arguments work together
+            Show why they prove your side of the motion
+            Present the overall case impact
+        </synthesis>
+    </speech>
 
 rebuttal_speech: |
  Below is your opponent's first speech. Generate a rebuttal structured as follows:

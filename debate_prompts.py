@@ -1,15 +1,15 @@
-from models import DebatorPrompts
+from models import DebatePrompts
 import yaml
 
 
-# Create the DebatorPrompts object
+# Create the DebatePrompts object
 
 
-def get_debator_prompts() -> DebatorPrompts:
+def get_debate_prompt() -> DebatePrompts:
     with open("debate_prompts.yaml", "r") as file:
         prompts = yaml.safe_load(file)
 
-    debator_prompts = DebatorPrompts(
+    debator_prompts = DebatePrompts(
         first_speech_prompt=prompts["first_speech"],
         rebuttal_speech_prompt=prompts["rebuttal_speech"],
         final_speech_prompt=prompts["final_speech"],
@@ -19,4 +19,4 @@ def get_debator_prompts() -> DebatorPrompts:
     return debator_prompts
 
 if __name__ == "__main__":
-    print(get_debator_prompts())
+    print(get_debate_prompt())
