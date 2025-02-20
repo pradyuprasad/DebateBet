@@ -48,7 +48,7 @@ class DebateState:
                         "role": "assistant"
                         if current_round.side == Side.OPPOSITION
                         else "user",
-                        "content": prop_speech,
+                        "content": "Proposition speech: " + prop_speech,
                     }
                 )
             if opp_speech != -1:
@@ -57,7 +57,7 @@ class DebateState:
                         "role": "assistant"
                         if current_round.side == Side.PROPOSITION
                         else "user",
-                        "content": opp_speech,
+                        "content": "Opposition speech: " + opp_speech,
                     }
                 )
         return messages
