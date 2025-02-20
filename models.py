@@ -200,7 +200,7 @@ class DebateTotal(BaseModel):
 
 
         judge_token_counts = TokenCount()
-        for model, usage_data in data.get('judge_token_counts'):
+        for model, usage_data in data.get('judge_token_counts', {}).items():
             model_usage = ModelTokenUsage(**usage_data)
             judge_token_counts.model_usages[model] = model_usage
 

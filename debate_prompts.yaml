@@ -1,5 +1,5 @@
 first_speech: |
-    Structure your response as follows:
+    Structure your response as follows in english only:
     <speech>
         <argument1>
             <coreClaim>State your first main claim in one sentence</coreClaim>
@@ -26,7 +26,7 @@ first_speech: |
     </speech>
 
 rebuttal_speech: |
- Below is your opponent's first speech. Generate a rebuttal structured as follows:
+ Below is your opponent's first speech. Generate a rebuttal structured as follows in english only:
  <rebuttal>
      <clashPoint1>
          <originalClaim>[Quote exact core claim you're responding to]</originalClaim>
@@ -64,7 +64,7 @@ rebuttal_speech: |
  - Be specific about why your responses are stronger
 
 final_speech: |
- I will provide your opponent's rebuttal analysis. Give a final speech that shows why you win this debate.
+ I will provide your opponent's rebuttal analysis. Give a final speech that shows why you win this debate in english only.
  <finalSpeech>
      <framing>
          What are the core questions this debate comes down to?

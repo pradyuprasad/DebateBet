@@ -120,10 +120,10 @@ def extract_debate_result(xml_string: str, model: str) -> JudgeResult:
                print("Invalid input, please try again")
 
 @retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
+    stop=stop_after_attempt(10),
+    wait=wait_exponential(multiplier=1, min=10, max=20),
     before_sleep=lambda retry_state: logger.warning(
-        f"Attempt {retry_state.attempt_number} failed. Retrying after backoff..."
+        f"Attempt {retry_state.attempt_number} failed. Failed with error: {retry_state.outcome.exception()}. Retrying after backoff..."
     ),
 )
 def get_judgement_string(debate: DebateTotal, prompts: DebatePrompts, model: str) -> tuple[str, dict]:
@@ -222,9 +222,9 @@ def run_debate(
 
     @retry(
         stop=stop_after_attempt(5),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
+        wait=wait_exponential(multiplier=2, min=60, max=120),
         before_sleep=lambda retry_state: logger.warning(
-            f"Attempt {retry_state.attempt_number} failed. Retrying after backoff..."
+            f"Attempt {retry_state.attempt_number} failed. Failed with error: {retry_state.outcome.exception()}. Retrying after backoff..."
         ),
     )
     def get_valid_response(messages, model):
@@ -238,7 +238,7 @@ def run_debate(
         "model": model,  # OpenRouter requires full model path like "openai/gpt-4"
         "messages": messages,
         "provider": {
-            "ignore": ["Nebius"]
+            "ignore": []
         }
         }
         logger.debug(f"Request payload: {payload}")
